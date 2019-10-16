@@ -25,7 +25,8 @@ class ProxyPool:
     """Imports and gives proxies from queue on demand."""
 
     def __init__(
-        self, proxies, min_req_proxy=5, max_error_rate=0.5, max_resp_time=8
+        self, proxies, min_req_proxy=5, max_error_rate=0.5, max_resp_time=8,
+        max_requests_per_proxy=0
     ):
         self._proxies = proxies
         self._pool = []
@@ -33,6 +34,9 @@ class ProxyPool:
         # if num of erros greater or equal 50% - proxy will be remove from pool
         self._max_error_rate = max_error_rate
         self._max_resp_time = max_resp_time
+        self._max_requests_per_proxy = max_requests_per_proxy
+        if self._max_requests_per_proxy:
+            self._max_requests_per_proxy += 2
 
     async def get(self, scheme):
         scheme = scheme.upper()
@@ -57,7 +61,8 @@ class ProxyPool:
                 return proxy
 
     def put(self, proxy):
-        if proxy.stat['requests'] >= self._min_req_proxy and (
+        if (self._max_requests_per_proxy and self._max_requests_per_proxy <= proxy.stat['requests']) or \
+            proxy.stat['requests'] >= self._min_req_proxy and (
             (proxy.error_rate > self._max_error_rate)
             or (proxy.avg_resp_time > self._max_resp_time)
         ):
@@ -86,6 +91,7 @@ class Server:
         http_allowed_codes=None,
         backlog=100,
         loop=None,
+        max_requests_per_proxy=0,
         **kwargs
     ):
         self.host = host
@@ -99,7 +105,8 @@ class Server:
         self._server = None
         self._connections = {}
         self._proxy_pool = ProxyPool(
-            proxies, min_req_proxy, max_error_rate, max_resp_time
+            proxies, min_req_proxy, max_error_rate, max_resp_time,
+            max_requests_per_proxy
         )
         self._resolver = Resolver(loop=self._loop)
         self._http_allowed_codes = http_allowed_codes or []

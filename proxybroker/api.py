@@ -280,6 +280,7 @@ class Broker:
             timeout=self._timeout,
             max_tries=kwargs.pop('max_tries', self._max_tries),
             loop=self._loop,
+            max_requests_per_proxy=kwargs.pop('max_requests_per_proxy', 0),
             **kwargs
         )
         self._server.start()

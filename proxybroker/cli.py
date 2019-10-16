@@ -281,6 +281,12 @@ def add_serve_args(group):
         default=100,
         help='The maximum number of queued connections passed to listen',
     )
+    group.add_argument(
+        '--max_requests_per_proxy',
+        type=int,
+        default=0,
+        help='The maximum number of requests per each proxy',
+    )
 
 
 def add_limit_arg(group, _def=0, _help='The maximum number of working proxies'):
@@ -425,6 +431,7 @@ def cli(args=sys.argv[1:]):
             post=ns.post,
             strict=ns.strict,
             dnsbl=ns.dnsbl,
+            max_requests_per_proxy=ns.max_requests_per_proxy,
         )
         print('Server started at http://%s:%d' % (ns.host, ns.port))
 
